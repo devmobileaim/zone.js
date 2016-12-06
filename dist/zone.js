@@ -651,7 +651,7 @@ var Zone$1 = (function (global) {
         /// Skip this frame when printing out stack
         FrameType[FrameType["blackList"] = 0] = "blackList";
         /// This frame marks zone transition
-        FrameType[FrameType["trasition"] = 1] = "trasition";
+        FrameType[FrameType["transition"] = 1] = "transition";
     })(FrameType || (FrameType = {}));
     
     var NativeError = global[__symbol__('Error')] = global.Error;
@@ -689,7 +689,7 @@ var Zone$1 = (function (global) {
                         frames_1.splice(i, 1);
                         i--;
                     }
-                    else if (frameType === FrameType.trasition) {
+                    else if (frameType === FrameType.transition) {
                         if (zoneFrame.parent) {
                             // This is the special frame where zone changed. Print and process it accordingly
                             frames_1[i] += " [" + zoneFrame.parent.zone.name + " => " + zoneFrame.zone.name + "]";
@@ -722,6 +722,18 @@ var Zone$1 = (function (global) {
             set: function (value) { return NativeError.stackTraceLimit = value; }
         });
     }
+    if (NativeError.hasOwnProperty('captureStackTrace')) {
+        Object.defineProperty(ZoneAwareError, 'captureStackTrace', {
+            value: function (targetObject, constructorOpt) {
+                NativeError.captureStackTrace(targetObject, constructorOpt);
+            }
+        });
+    }
+    Object.defineProperty(ZoneAwareError, 'prepareStackTrace', {
+        get: function () { return NativeError.prepareStackTrace; },
+        set: function (value) { return NativeError.prepareStackTrace = value; }
+    });
+    // Now we need to populet the `blacklistedStackFrames` as well as find the
     // Now we need to populet the `blacklistedStackFrames` as well as find the
     // run/runGuraded/runTask frames. This is done by creating a detect zone and then threading
     // the execution through all of the above methods so that we can look at the stack trace and
@@ -748,7 +760,7 @@ var Zone$1 = (function (global) {
                         // FireFox: Zone.prototype.run@http://localhost:9876/base/build/lib/zone.js:101:24
                         // Safari: run@http://localhost:9876/base/build/lib/zone.js:101:24
                         var fnName = frame.split('(')[0].split('@')[0];
-                        var frameType = FrameType.trasition;
+                        var frameType = FrameType.transition;
                         if (fnName.indexOf('ZoneAwareError') !== -1) {
                             zoneAwareFrame = frame;
                         }
@@ -1518,9 +1530,11 @@ var _global = typeof window === 'object' && window || typeof self === 'object' &
 patchTimer(_global, set, clear, 'Timeout');
 patchTimer(_global, set, clear, 'Interval');
 patchTimer(_global, set, clear, 'Immediate');
-patchTimer(_global, 'request', 'cancel', 'AnimationFrame');
-patchTimer(_global, 'mozRequest', 'mozCancel', 'AnimationFrame');
-patchTimer(_global, 'webkitRequest', 'webkitCancel', 'AnimationFrame');
+if (!window.hasOwnProperty('disableZoneJsAnimationFrame')) {
+    patchTimer(_global, 'request', 'cancel', 'AnimationFrame');
+    patchTimer(_global, 'mozRequest', 'mozCancel', 'AnimationFrame');
+    patchTimer(_global, 'webkitRequest', 'webkitCancel', 'AnimationFrame');
+}
 for (var i = 0; i < blockingMethods.length; i++) {
     var name = blockingMethods[i];
     patchMethod(_global, name, function (delegate, symbol, name) {
