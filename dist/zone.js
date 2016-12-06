@@ -1339,11 +1339,6 @@ var _global = typeof window === 'object' && window || typeof self === 'object' &
 patchTimer(_global, set, clear, 'Timeout');
 patchTimer(_global, set, clear, 'Interval');
 patchTimer(_global, set, clear, 'Immediate');
-if (!window.hasOwnProperty('disableZoneJsAnimationFrame')) {
-    patchTimer(_global, 'request', 'cancel', 'AnimationFrame');
-    patchTimer(_global, 'mozRequest', 'mozCancel', 'AnimationFrame');
-    patchTimer(_global, 'webkitRequest', 'webkitCancel', 'AnimationFrame');
-}
 for (var i = 0; i < blockingMethods.length; i++) {
     var name = blockingMethods[i];
     patchMethod(_global, name, function (delegate, symbol, name) {
