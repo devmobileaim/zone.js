@@ -660,43 +660,7 @@ function bindArguments(args, source) {
 
 var isNode = (typeof process !== 'undefined' && {}.toString.call(process) === '[object process]');
 
-function patchProperty(obj, prop) {
-    var desc = Object.getOwnPropertyDescriptor(obj, prop) || { enumerable: true, configurable: true };
-    // A property descriptor cannot have getter/setter and be writable
-    // deleting the writable and value properties avoids this error:
-    //
-    // TypeError: property descriptors must not specify a value or be writable when a
-    // getter or setter has been specified
-    delete desc.writable;
-    delete desc.value;
-    // substr(2) cuz 'onclick' -> 'click', etc
-    var eventName = prop.substr(2);
-    var _prop = '_' + prop;
-    desc.set = function (fn) {
-        if (this[_prop]) {
-            this.removeEventListener(eventName, this[_prop]);
-        }
-        if (typeof fn === 'function') {
-            var wrapFn = function (event) {
-                var result;
-                result = fn.apply(this, arguments);
-                if (result != undefined && !result)
-                    event.preventDefault();
-            };
-            this[_prop] = wrapFn;
-            this.addEventListener(eventName, wrapFn, false);
-        }
-        else {
-            this[_prop] = null;
-        }
-    };
-    // The getter would return undefined for unassigned properties but the default value of an
-    // unassigned property is null
-    desc.get = function () {
-        return this[_prop] || null;
-    };
-    Object.defineProperty(obj, prop, desc);
-}
+
 
 
 
